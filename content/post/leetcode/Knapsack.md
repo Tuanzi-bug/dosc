@@ -3,7 +3,6 @@ title: "Knapsack"
 slug: "Knapsack"
 description: "背包问题-从记忆化搜索优化至动态规划"
 date: "2024-11-30T17:11:59+08:00"
-lastmod: "2024-11-30T17:11:59+08:00"
 math: 
 license: 
 hidden: false
