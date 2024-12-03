@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>米粒儿</title><link>https://www.yangdiy.cn/</link><description>Recent content on 米粒儿</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><atom:link href="https://www.yangdiy.cn/index.xml" rel="self" type="application/rss+xml"/><item><title>Knapsack</title><link>https://www.yangdiy.cn/p/knapsack/</link><pubDate>Sat, 30 Nov 2024 17:11:59 +0800</pubDate><guid>https://www.yangdiy.cn/p/knapsack/</guid><description>&lt;h1 id="背包问题">背包问题
+&lt;/h1>&lt;h2 id="参考">参考
+&lt;/h2>&lt;ol>
+&lt;li>&lt;a class="link" href="https://en.oi-wiki.org/dp/knapsack/" target="_blank" rel="noopener"
+>https://en.oi-wiki.org/dp/knapsack/&lt;/a>&lt;/li>
+&lt;li>【题单】https://huxulm.github.io/lc-rating/list/dynamic_programming&lt;/li>
+&lt;li>&lt;a class="link" href="https://www.bilibili.com/video/BV16Y411v7Y6/" target="_blank" rel="noopener"
+>https://www.bilibili.com/video/BV16Y411v7Y6/&lt;/a>&lt;/li>
+&lt;/ol></description></item><item><title>Mysql-基础篇</title><link>https://www.yangdiy.cn/p/mysql-%E5%9F%BA%E7%A1%80%E7%AF%87/</link><pubDate>Sat, 30 Nov 2024 00:00:00 +0000</pubDate><guid>https://www.yangdiy.cn/p/mysql-%E5%9F%BA%E7%A1%80%E7%AF%87/</guid><description>&lt;h1 id="mysql-基础篇">Mysql-基础篇
+&lt;/h1>&lt;h2 id="mysql-基础架构">MySQL 基础架构
+&lt;/h2>&lt;img src="./assets/mysql架构图.png" alt="架构图" style="zoom:33%;" />
+&lt;blockquote>
+&lt;p>其实图相对重要一些，一些相关题目可以记忆这个图进行回答&lt;/p>
+&lt;/blockquote>
+&lt;p>Mysql分为Server层和存储引擎层两部分。&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>连接器：&lt;/strong> 身份认证和权限相关&lt;/li>
+&lt;li>&lt;strong>查询缓存：&lt;/strong> 执行查询语句的时候，会先查询缓存(命中概率低，8.0移除)&lt;/li>
+&lt;li>&lt;strong>分析器：&lt;/strong> 进行词法分析和语法分析，检查是否正确以及进行鉴权&lt;/li>
+&lt;li>&lt;strong>优化器：&lt;/strong> 决定选择使用最优方案，例如匹配索引，多表关联(join)的连接顺序&lt;/li>
+&lt;li>&lt;strong>执行器：&lt;/strong> 执行语句，然后从存储引擎返回数据。 （会对实际运行的表进行鉴权）&lt;/li>
+&lt;li>&lt;strong>插件式存储引擎&lt;/strong>：主要负责数据的存储和读取，支持 InnoDB、MyISAM、Memory 等多种存储引擎。&lt;/li>
+&lt;/ul>
+&lt;h3 id="1-查询语句在mysql-的执行过程">1. 查询语句在Mysql 的执行过程
+&lt;/h3>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sql" data-lang="sql">&lt;span class="line">&lt;span class="cl">&lt;span class="k">select&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">from&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">tb_student&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">A&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">where&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">A&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">age&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;18&amp;#39;&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">and&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">A&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">name&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39; 张三 &amp;#39;&lt;/span>&lt;span class="p">;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol>
+&lt;li>连接数据库&lt;/li>
+&lt;li>在 MySQL8.0 版本以前，会先查询缓存，以这条 SQL 语句为 key 在内存中查询是否有结果。（在工程实现中，在查询缓存返回结果之前，做权限校验）。&lt;/li>
+&lt;li>通过分析器进行词法分析，提取 SQL 语句的关键元素，比如提取上面这个语句是查询 select，提取需要查询的表名为 tb_student，需要查询所有的列，查询条件是这个表的 id=&amp;lsquo;1&amp;rsquo;。然后判断这个 SQL 语句是否有语法错误，比如关键词是否正确等等，如果检查没问题就执行下一步。（注：在词法分析阶段，会进行 precheck 验证权限，判断是否有权限。）&lt;/li>
+&lt;li>优化器进行确定执行方案，上面的 SQL 语句，可以有两种执行方案：a.先查询学生表中姓名为“张三”的学生，然后判断是否年龄是 18。b.先找出学生中年龄 18 岁的学生，然后再查询姓名为“张三”的学生。那么优化器根据自己的优化算法进行选择执行效率最好的一个方案（优化器认为，有时候不一定最好）。那么确认了执行计划后就准备开始执行了。&lt;/li>
+&lt;li>在执行器过程，会先进行权限校验，然后会调用数据库引擎接口，返回引擎的执行结果。&lt;/li>
+&lt;/ol>
+&lt;h3 id="2-更新语句在mysql-的执行过程">2. 更新语句在Mysql 的执行过程
+&lt;/h3>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sql" data-lang="sql">&lt;span class="line">&lt;span class="cl">&lt;span class="k">update&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">tb_student&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">A&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">set&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">A&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">age&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;19&amp;#39;&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">where&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">A&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">name&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39; 张三 &amp;#39;&lt;/span>&lt;span class="p">;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>更新语句会沿着查询的流程走，与查询语句不同的是执行更新时候，会记录日志。&lt;/p>
+&lt;ol>
+&lt;li>执行器会找到目标行数据。如果目标行所在的数据页在内存（Buffer Pool ）中，就会直接返回执行器，否则需要从磁盘读入内存，再返回。&lt;/li>
+&lt;li>执行器拿到引擎给的行数据，修改对应字段值，得到新的一行数据，再调用引擎接口写入这行新数据。&lt;/li>
+&lt;li>引擎将这行新数据更新到内存中，同时将这个更新操作记录到 redo log 里面，此时 redo log 处于 prepare 状态。然后告知执行器执行完成了，随时可以提交事务。&lt;/li>
+&lt;li>执行器生成这个操作的 binlog，并把 binlog 写入磁盘。&lt;/li>
+&lt;li>执行器调用引擎的提交事务接口，引擎把刚刚写入的 redo log 改成提交（commit）状态，更新完成。&lt;/li>
+&lt;/ol>
+&lt;img src="./assets/update语句执行流程.png" alt="update语句执行流程" style="zoom:25%;" />
+&lt;h3 id="3-为什么是两阶段提交日志">3. 为什么是两阶段提交日志
+&lt;/h3>&lt;p>核心目的：保证两份日志之间的逻辑一致（数据一致性）。&lt;/p>
+&lt;p>从反证法说明：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>先写 redo log 直接提交，然后写 binlog&lt;/strong>：假设写完 redo log 后，机器挂了，binlog 日志没有被写入，那么机器重启后，这台机器会通过 redo log 恢复数据，但是这个时候 binlog 并没有记录该数据，后续进行机器备份的时候，就会丢失这一条数据，同时主从同步也会丢失这一条数据。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>先写 binlog，然后写 redo log&lt;/strong>，假设写完了 binlog，机器异常重启了，由于没有 redo log，本机是无法恢复这一条记录的，但是 binlog 又有记录，那么和上面同样的道理，就会产生数据不一致的情况。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="4-介绍涉及更新语句的两个日志">4. 介绍涉及更新语句的两个日志
+&lt;/h3>&lt;p>redo log（重做日志）：&lt;/p>
+&lt;ul>
+&lt;li>是innodb引擎实现，是物理日志，记录某个数据页的修改。⽐如对 XXX 表空间中的 YYY 数据⻚ ZZZ 偏移量的地⽅做了AAA 更新&lt;/li>
+&lt;li>固定大小，默认为4 GB，可以循环写。&lt;/li>
+&lt;li>write pos 是当前记录的位置，一边写一边后移，写到第 3 号文件末尾后就回到 0 号文件开头。checkpoint 是当前要擦除的位置，也是往后推移并且循环的，擦除记录前要把记录更新到数据文件。&lt;/li>
+&lt;li>有了 redo log，InnoDB 就可以保证即使数据库发生异常重启，之前提交的记录都不会丢失，这个能力称为 &lt;code>crash-safe&lt;/code>。⽤于掉电等故障恢复。&lt;/li>
+&lt;/ul>
+&lt;p>binlog （归档日志）：&lt;/p>
+&lt;ul>
+&lt;li>是server层实现，是逻辑日志，记录的是语句的原始逻辑。比如“给 ID=2 这一行的 c 字段加 1 ”&lt;/li>
+&lt;li>是可以追加写入的。“追加写”是指 binlog 文件写到一定大小后会切换到下一个，并不会覆盖以前的日志。&lt;/li>
+&lt;li>主要用于备份恢复，主从恢复。&lt;/li>
+&lt;/ul>
+&lt;h3 id="其他问题">其他问题
+&lt;/h3>&lt;ul>
+&lt;li>两个日志的区别&lt;/li>
+&lt;li>两阶段执行过程&lt;/li>
+&lt;/ul>
+&lt;h2 id="数据库事务">数据库事务
+&lt;/h2>&lt;h3 id="1-介绍事务的特性">1. 介绍事务的特性
+&lt;/h3>&lt;p>数据库事务可以保证多个对数据库的操作（也就是 SQL 语句）构成一个逻辑上的整体。简单说：&lt;strong>要么全部执行成功,要么全部不执行&lt;/strong> 。&lt;/p>
+&lt;p>具有ACID特性：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>原子性&lt;/strong>（&lt;code>Atomicity&lt;/code>）：事务是最小的执行单位，不允许分割。事务的原子性确保动作要么全部完成，要么完全不起作用；&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>一致性&lt;/strong>（&lt;code>Consistency&lt;/code>）：执行事务前后，数据保持一致，例如转账业务中，无论事务是否成功，转账者和收款人的总额应该是不变的；&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>隔离性&lt;/strong>（&lt;code>Isolation&lt;/code>）：并发访问数据库时，一个用户的事务不被其他事务所干扰，各并发事务之间数据库是独立的；&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>持久性&lt;/strong>（&lt;code>Durability&lt;/code>）：一个事务被提交之后。它对数据库中数据的改变是持久的，即使数据库发生故障也不应该对其有任何影响。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>注意：&lt;strong>只有保证了事务的持久性、原子性、隔离性之后，一致性才能得到保障。也就是说 A、I、D 是手段，C 是目的！&lt;/strong>&lt;/p>
+&lt;h3 id="2-并发事务带来的问题">2. 并发事务带来的问题
+&lt;/h3>&lt;ul>
+&lt;li>脏读（Dirty read）：读取到其他事务未提交的数据。&lt;/li>
+&lt;li>丢失修改（Lost to modify）：指两个或多个事务同时对同一数据进行更新操作，其中一个事务的更新被另一个事务覆盖，导致前一个事务的修改丢失。&lt;/li>
+&lt;li>不可重复读（Unrepeatable read）：在一个事务中，前后读取的记录内容不一致；&lt;/li>
+&lt;li>幻读（Phantom read）：在一个事务中，前后读取的记录数量不一致。&lt;/li>
+&lt;/ul>
+&lt;h3 id="3-不同事务隔离级别的区别">3. 不同事务隔离级别的区别
+&lt;/h3>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>READ-UNCOMMITTED(读取未提交)&lt;/strong> ：可以读取尚未提交的数据变更。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>READ-COMMITTED(读取已提交)&lt;/strong> ：可以读取其他并发事务已经提交的数据。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>REPEATABLE-READ(可重复读)&lt;/strong> ：对同一字段的多次读取结果都是一致的。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>SERIALIZABLE(可串行化)&lt;/strong> ：加读写锁，保证所有的事务依次逐个执行。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>在不同隔离级别下可能发生的问题：&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th style="text-align: center">隔离级别&lt;/th>
+&lt;th style="text-align: center">脏读&lt;/th>
+&lt;th style="text-align: center">不可重复读&lt;/th>
+&lt;th style="text-align: center">幻读&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td style="text-align: center">读未提交&lt;/td>
+&lt;td style="text-align: center">√&lt;/td>
+&lt;td style="text-align: center">√&lt;/td>
+&lt;td style="text-align: center">√&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align: center">读提交&lt;/td>
+&lt;td style="text-align: center">×&lt;/td>
+&lt;td style="text-align: center">√&lt;/td>
+&lt;td style="text-align: center">√&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align: center">可重复读&lt;/td>
+&lt;td style="text-align: center">×&lt;/td>
+&lt;td style="text-align: center">×&lt;/td>
+&lt;td style="text-align: center">√&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align: center">串行化&lt;/td>
+&lt;td style="text-align: center">×&lt;/td>
+&lt;td style="text-align: center">×&lt;/td>
+&lt;td style="text-align: center">×&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h3 id="4-事务隔离的实现">4. 事务隔离的实现
+&lt;/h3>&lt;p>在实现上，数据库里面会创建一个视图，访问的时候以视图的逻辑结果为准。&lt;/p>
+&lt;ul>
+&lt;li>在“可重复读”隔离级别下，这个视图是在事务启动时创建的，整个事务存在期间都用这个视图。&lt;/li>
+&lt;li>在“读提交”隔离级别下，这个视图是在每个 SQL 语句开始执行的时候创建的。&lt;/li>
+&lt;li>这里需要注意的是，“读未提交”隔离级别下直接返回记录上的最新值，没有视图概念；&lt;/li>
+&lt;li>而“串行化”隔离级别下直接用加锁的方式来避免并行访问。&lt;/li>
+&lt;/ul>
+&lt;p>主要通过undo log版本链和read-view实现事务隔离。&lt;/p>
+&lt;h3 id="5-长事务的弊病">5. 长事务的弊病
+&lt;/h3>&lt;p>长事务意味着系统里面会存在很老的事务视图，在这个事务提交之前，回滚记录都要保留，这会导致大量占用存储空间。除此之外，长事务还占用锁资源，可能会拖垮库。&lt;/p>
+&lt;h2 id="索引">索引
+&lt;/h2>&lt;h3 id="1-哈希表有序数组和搜索树的优缺点">1. 哈希表、有序数组和搜索树的优缺点
+&lt;/h3>&lt;ul>
+&lt;li>哈希表是一种以键值对存储数据的结构。适用于等值查询的场景，例如NoSQL引擎，区间查询的速度很慢。&lt;/li>
+&lt;li>有序数组在等值查询和范围查询的场景中性能优秀，但是在更新数据上，成本太高，只适用于静态存储引擎。&lt;/li>
+&lt;li>搜索树的特点是父节点左子树所有结点的值小于父节点的值，右子树所有结点的值大于父节点的值。二叉树树高过高，访问多个数据块，磁盘随机读取数据块过于耗时，会采用N叉树。N取决于数据块的大小。以InnoDB 的一个整数字段索引为例，在一个节点（页）中，这个 N 差不多是 1200。&lt;/li>
+&lt;/ul>
+&lt;h3 id="2主键索引和普通索引是什么在查询中的区别是什么">2.主键索引和普通索引是什么，在查询中的区别是什么
+&lt;/h3>&lt;p>在 InnoDB 中，表都是根据主键顺序以索引的形式存放的，每一个索引在 InnoDB 里面对应一棵 B+ 树。&lt;/p>
+&lt;p>主键索引的叶子节点存的是整行数据。在 InnoDB 里，主键索引也被称为&lt;strong>聚簇索引&lt;/strong>（clustered index）。&lt;/p>
+&lt;p>非主键索引的叶子节点内容是主键的值。在 InnoDB 里，非主键索引也被称为&lt;strong>二级索引&lt;/strong>（secondary index）。&lt;/p>
+&lt;p>在查询过程中，基于非主键索引的查询需要回表（到主键索引树在搜索一次），相比之下多扫描一颗索引树。&lt;/p>
+&lt;img src="./assets/innodb的索引组织结构.png" alt="img" style="zoom:33%;" />
+&lt;h3 id="3-主键不是有序的会带来什么问题自增主键有什么优势有没有什么场景适合用业务字段直接做主键的呢">3. 主键不是有序的会带来什么问题，自增主键有什么优势，有没有什么场景适合用业务字段直接做主键的呢？
+&lt;/h3>&lt;p>B+ 树为了维护索引有序性，在插入新值的时候需要做必要的维护。当页满了，根据 B+ 树的算法，需要申请一个新的数据页，然后挪动部分数据过去，这个过程称为页分裂。页分裂操作会影响性能也会影响数据页的利用率。&lt;/p>
+&lt;ul>
+&lt;li>性能角度：自增主键的插入数据模式，正符合了递增插入的场景。每次插入一条新记录，都是追加操作，都不涉及到挪动其他记录，也不会触发叶子节点的分裂。而有业务逻辑的字段做主键，则往往不容易保证有序插入，这样写数据成本相对较高。&lt;/li>
+&lt;li>存储空间：主键长度越小，普通索引的叶子节点就越小，普通索引占用的空间也就越小。&lt;/li>
+&lt;/ul>
+&lt;p>在场景是==只有一个索引；该索引必须是唯一索引==（KV场景），适合用业务字段直接做主键。&lt;/p>
+&lt;h3 id="4-一条sql查询语句会扫描多少行以及几次树的搜索操作">4. 一条Sql查询语句，会扫描多少行以及几次树的搜索操作
+&lt;/h3>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sql" data-lang="sql">&lt;span class="line">&lt;span class="cl">&lt;span class="o">#&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="err">表：主键&lt;/span>&lt;span class="n">ID索引&lt;/span>&lt;span class="err">，&lt;/span>&lt;span class="n">k索引&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="o">+&lt;/span>&lt;span class="c1">-----+---+----+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">ID&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">k&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">s&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="o">+&lt;/span>&lt;span class="c1">-----+---+----+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">100&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">aa&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">200&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">bb&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">300&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">cc&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">500&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">ee&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">600&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">6&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">ff&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">700&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">7&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">gg&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">|&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="o">+&lt;/span>&lt;span class="c1">-----+---+----+
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="o">#&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="err">执行语句：&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="k">select&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">from&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">T&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">where&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">k&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">between&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">and&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;img src="./assets/innodb的索引组织结构.png" alt="img" style="zoom:33%;" />
+&lt;p>这条 SQL 查询语句的执行流程：&lt;/p>
+&lt;ul>
+&lt;li>在 k 索引树上找到 k=3 的记录，取得 ID = 300；&lt;/li>
+&lt;li>再到 ID 索引树查到 ID=300 对应的 R3；&lt;/li>
+&lt;li>在 k 索引树取下一个值 k=5，取得 ID=500；&lt;/li>
+&lt;li>再回到 ID 索引树查到 ID=500 对应的 R4；&lt;/li>
+&lt;li>在 k 索引树取下一个值 k=6，不满足条件，循环结束。&lt;/li>
+&lt;/ul>
+&lt;h3 id="5-说一下覆盖索引和联合索引">5. 说一下覆盖索引和联合索引
+&lt;/h3>&lt;p>如果一个索引包含（或者说覆盖）所有需要查询的字段的值，（核心是无需回表查询），就称之为 &lt;strong>覆盖索引（Covering Index）&lt;/strong> 。&lt;/p>
+&lt;p>由于覆盖索引可以减少树的搜索次数，显著提升查询性能。&lt;/p>
+&lt;p>使用表中的多个字段创建索引，就是 &lt;strong>联合索引&lt;/strong>。&lt;/p>
+&lt;h3 id="6-最左前缀原则详细介绍">6. 最左前缀原则详细介绍
+&lt;/h3>&lt;p>最左前缀匹配原则指的是在使用索引时候，查询条件满足左前缀条件，可以利用索引加速检索。最左前缀可以是联合索引的最左 N 个字段，也可以是字符串索引的最左 M 个字符。&lt;/p>
+&lt;p>对于一个联合索引 &lt;code>(A, B, C)&lt;/code>：&lt;/p>
+&lt;ul>
+&lt;li>索引能被以下查询利用：
+&lt;ul>
+&lt;li>&lt;code>WHERE A = ?&lt;/code>&lt;/li>
+&lt;li>&lt;code>WHERE A = ? AND B = ?&lt;/code>&lt;/li>
+&lt;li>&lt;code>WHERE A = ? AND B = ? AND C = ?&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;p>最左匹配原则会一直向右匹配，直到遇到范围查询（如 &amp;gt;、&amp;lt;）为止。对于 &amp;gt;=、&amp;lt;=、BETWEEN 以及前缀匹配 LIKE 的范围查询，不会停止匹配。&lt;/p>
+&lt;h3 id="7-如何安排索引内的字段顺序">7. 如何安排索引内的字段顺序
+&lt;/h3>&lt;ul>
+&lt;li>
+&lt;p>如果通过调整顺序，可以帮助少维护一个索引。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>可以将区分度高的字段放在最左边，这也可以过滤更多数据。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>考虑空间。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="8-索引下推详细介绍">8. 索引下推详细介绍
+&lt;/h3>&lt;p>索引下推优化（index condition pushdown)是指在索引遍历过程中，对索引中包含的字段先做判断，直接过滤掉不满足条件的记录，减少回表次数，提高查询效率。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sql" data-lang="sql">&lt;span class="line">&lt;span class="cl">&lt;span class="k">SELECT&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">FROM&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">user&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">WHERE&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">zipcode&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s1">&amp;#39;431200&amp;#39;&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">AND&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">MONTH&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">birthdate&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://www.yangdiy.cn/assets/index-condition-pushdown-graphic-illustration.png"
+loading="lazy"
+alt="img"
+>&lt;/p>
+&lt;h2 id="锁">锁
+&lt;/h2>&lt;h3 id="1-全局锁是什么在哪些场景下使用">1. 全局锁是什么，在哪些场景下使用。
+&lt;/h3>&lt;h3 id="2-表级别的锁有哪些">2. 表级别的锁有哪些？
+&lt;/h3>&lt;h3 id="3-如何安全的给小表添加字段">3. 如何安全的给小表添加字段？
+&lt;/h3>&lt;h3 id="4-行锁是什么两阶段协议是什么">4. 行锁是什么，两阶段协议是什么？
+&lt;/h3>&lt;h3 id="5死锁是什么如何解决">5.死锁是什么，如何解决？
+&lt;/h3>&lt;h3 id="6怎么解决由这种热点行更新导致的性能问题呢">6.怎么解决由这种热点行更新导致的性能问题呢？
+&lt;/h3></description></item><item><title>Archives</title><link>https://www.yangdiy.cn/archives/</link><pubDate>Sun, 06 Mar 2022 00:00:00 +0000</pubDate><guid>https://www.yangdiy.cn/archives/</guid><description/></item><item><title>Links</title><link>https://www.yangdiy.cn/links/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.yangdiy.cn/links/</guid><description>&lt;p>To use this feature, add &lt;code>links&lt;/code> section to frontmatter.&lt;/p>
+&lt;p>This page&amp;rsquo;s frontmatter:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">links&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="nt">title&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">GitHub&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">description&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">GitHub is the world&amp;#39;s largest software development platform.&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">website&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">https://github.com&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">image&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="nt">title&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">TypeScript&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">description&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">TypeScript is a typed superset of JavaScript that compiles to plain JavaScript.&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">website&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">https://www.typescriptlang.org&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">image&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">ts-logo-128.jpg&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;code>image&lt;/code> field accepts both local and external images.&lt;/p></description></item><item><title>Search</title><link>https://www.yangdiy.cn/search/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.yangdiy.cn/search/</guid><description/></item></channel></rss>
