@@ -14,11 +14,9 @@ tags:
     - “Mysql”
 ---
 
-# Mysql-基础篇
-
 ## MySQL 基础架构
 
-<img src="./assets/mysql架构图.png" alt="架构图" style="zoom:33%;" />
+<img src="mysql架构图.png" alt="架构图" style="zoom:33%;" />
 
 > 其实图相对重要一些，一些相关题目可以记忆这个图进行回答
 
@@ -29,7 +27,7 @@ Mysql分为Server层和存储引擎层两部分。
 * **分析器：** 进行词法分析和语法分析，检查是否正确以及进行鉴权
 * **优化器：** 决定选择使用最优方案，例如匹配索引，多表关联(join)的连接顺序
 * **执行器：** 执行语句，然后从存储引擎返回数据。 （会对实际运行的表进行鉴权）
-* **插件式存储引擎**：主要负责数据的存储和读取，支持 InnoDB、MyISAM、Memory 等多种存储引擎。
+* **插件式存储引擎**：主要负责数据的存储和读取，支持 InnoDB、MyISAM、Memory 等多种存储引擎。 
 
 ### 1. 查询语句在Mysql 的执行过程
 
@@ -57,7 +55,7 @@ update tb_student A set A.age='19' where A.name=' 张三 ';
 4. 执行器生成这个操作的 binlog，并把 binlog 写入磁盘。
 5. 执行器调用引擎的提交事务接口，引擎把刚刚写入的 redo log 改成提交（commit）状态，更新完成。
 
-<img src="./assets/update语句执行流程.png" alt="update语句执行流程" style="zoom:25%;" />
+<img src="update语句执行流程.png" alt="update语句执行流程" style="zoom:25%;" />
 
 ### 3. 为什么是两阶段提交日志
 
@@ -170,7 +168,7 @@ binlog （归档日志）：
 
 在查询过程中，基于非主键索引的查询需要回表（到主键索引树在搜索一次），相比之下多扫描一颗索引树。
 
-<img src="./assets/innodb的索引组织结构.png" alt="img" style="zoom:33%;" />
+<img src="innodb的索引组织结构.png" alt="img" style="zoom:33%;" />
 
 ### 3. 主键不是有序的会带来什么问题，自增主键有什么优势，有没有什么场景适合用业务字段直接做主键的呢？
 
@@ -199,7 +197,7 @@ B+ 树为了维护索引有序性，在插入新值的时候需要做必要的�
 select * from T where k between 3 and 5
 ```
 
-<img src="./assets/innodb的索引组织结构.png" alt="img" style="zoom:33%;" />
+<img src="innodb的索引组织结构.png" alt="img" style="zoom:33%;" />
 
 这条 SQL 查询语句的执行流程：
 
@@ -245,7 +243,7 @@ select * from T where k between 3 and 5
 SELECT * FROM user WHERE zipcode = '431200' AND MONTH(birthdate) = 3;
 ```
 
-![img](./assets/index-condition-pushdown-graphic-illustration.png)
+![img](index-condition-pushdown-graphic-illustration.png)
 
 ## 锁
 
@@ -270,3 +268,4 @@ SELECT * FROM user WHERE zipcode = '431200' AND MONTH(birthdate) = 3;
 
 
 ### 6.怎么解决由这种热点行更新导致的性能问题呢？
+
