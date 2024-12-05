@@ -1,5 +1,6 @@
 ---
 title: "Mysql-基础篇"
+slug: "Mysql-基础篇"
 description: "mysql-八股基础篇"
 date: "2024-11-30"
 math: true
