@@ -4,15 +4,15 @@ unsafe = true
 
 [goldmark.extensions.passthrough]
 enable = true
-[markup.goldmark.extensions.extras.delete]
+[goldmark.extensions.extras.delete]
 enable = true
-[markup.goldmark.extensions.extras.insert]
+[goldmark.extensions.extras.insert]
 enable = true
-[markup.goldmark.extensions.extras.mark]
+[goldmark.extensions.extras.mark]
 enable = true
-[markup.goldmark.extensions.extras.subscript]
+[goldmark.extensions.extras.subscript]
 enable = true
-[markup.goldmark.extensions.extras.superscript]
+[goldmark.extensions.extras.superscript]
 enable = true
 
 # LaTeX math support
