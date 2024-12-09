@@ -5,15 +5,15 @@ unsafe = true
 [goldmark.extensions.passthrough]
 enable = true
 [markup.goldmark.extensions.extras.delete]
-  enable = true
+enable = true
 [markup.goldmark.extensions.extras.insert]
-  enable = true
+enable = true
 [markup.goldmark.extensions.extras.mark]
-  enable = true
+enable = true
 [markup.goldmark.extensions.extras.subscript]
-  enable = true
+enable = true
 [markup.goldmark.extensions.extras.superscript]
-  enable = true
+enable = true
 
 # LaTeX math support
 # https://gohugo.io/content-management/mathematics/
