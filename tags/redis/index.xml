@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Redis on 米粒儿</title><link>https://www.yangdiy.cn/tags/redis/</link><description>Recent content in Redis on 米粒儿</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Thu, 12 Dec 2024 23:38:35 +0800</lastBuildDate><atom:link href="https://www.yangdiy.cn/tags/redis/index.xml" rel="self" type="application/rss+xml"/><item><title>Redis-八股题</title><link>https://www.yangdiy.cn/p/redis/</link><pubDate>Wed, 11 Dec 2024 00:00:00 +0000</pubDate><guid>https://www.yangdiy.cn/p/redis/</guid><description>&lt;p>&lt;img src="https://www.yangdiy.cn/assets/%E4%B8%8B%E8%BD%BD.webp"
+loading="lazy"
+alt="下载"
+>&lt;/p>
+&lt;h2 id="数据结构">数据结构
+&lt;/h2>&lt;h3 id="1-redis的数据类型以及实现的原理">1. Redis的数据类型以及实现的原理
+&lt;/h3>&lt;p>Redis 中&lt;strong>5 种基础数据类型&lt;/strong>：String（字符串）、List（列表）、Set（集合）、Hash（散列）、Zset（有序集合）。&lt;/p>
+&lt;p>&lt;img src="https://www.yangdiy.cn/assets/%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B.webp"
+loading="lazy"
+alt="基本数据类型和数据结构对应关系"
+>&lt;/p>
+&lt;p>这些数据结构均为值的底层实现方式，在 Redis 中，核心在于键与值之间的组织。只要理解了这一核心要点，那么对于其他数据结构的操作，其实就是先找到值，然后在集合中进行相关操作。&lt;/p>
+&lt;p>Redis 使用了一个哈希表来保存所有键值对，一个哈希表，其实就是一个数组，数组的每个元素称为一个哈希桶。哈希桶中的 entry 元素中保存了&lt;code>*key&lt;/code>和&lt;code>*value&lt;/code>指针，分别指向了实际的键和值。值保存的并不是值本身，而是指向具体值的指针。&lt;/p>
+&lt;p>&lt;img src="https://www.yangdiy.cn/assets/%e5%85%a8%e5%b1%80%e5%93%88%e5%b8%8c%e8%a1%a8.webp"
+loading="lazy"
+alt="全局哈希表"
+>&lt;/p>
+&lt;h3 id="2-哈希表存在的冲突问题">2. 哈希表存在的冲突问题
+&lt;/h3>&lt;p>当你往哈希表中写入更多数据时，可能两个 key 的哈希值和哈希桶计算对应关系时，正好落在了同一个哈希桶中。这就是哈希表存在的冲突问题。&lt;/p>
+&lt;p>Redis 解决哈希冲突的方式，就是链式哈希，就是指&lt;strong>同一个哈希桶中的多个元素用一个链表来保存，它们之间依次用指针连接&lt;/strong>。&lt;/p>
+&lt;h3 id="3-为什么需要rehash">3. 为什么需要rehash？
+&lt;/h3>&lt;p>哈希冲突链上的元素只能通过指针逐一查找再操作。如果哈希表里写入的数据越来越多，哈希冲突可能也会越来越多，这就会导致某些哈希冲突链过长，进而导致这个链上的元素查找耗时长，效率降低。&lt;/p>
+&lt;p>所以需要rehash操作，也就是增加现有的哈希桶数量，让逐渐增多的 entry 元素能在更多的桶之间分散保存，减少单个桶中的元素数量，从而减少单个桶中的冲突。&lt;/p>
+&lt;h3 id="4-rehash是怎么做的rehash会带来什么问题怎么解决">4. rehash是怎么做的，rehash会带来什么问题？怎么解决？
+&lt;/h3>&lt;p>Redis 默认有两个全局哈希表：哈希表 1 和哈希表 2。开始插入数据时用哈希表 1，此时哈希表 2 未分配空间。数据增多时执行 rehash，分三步：&lt;/p>
+&lt;ul>
+&lt;li>给哈希表 2 分配更大空间，如哈希表 1 的两倍；&lt;/li>
+&lt;li>把哈希表 1 数据重新映射并拷贝到哈希表 2；&lt;/li>
+&lt;li>释放哈希表 1 空间，然后切换到哈希表 2 保存更多数据，哈希表 1 留作下次 rehash 扩容备用。&lt;/li>
+&lt;/ul>
+&lt;p>（就是把数据向另一个更大的表拷贝了一下，之后就是两个表相互这样倒腾。）&lt;/p>
+&lt;p>存在一个问题：如果一次性把哈希表 1 中的数据都迁移完，会造成 Redis 线程阻塞，无法服务其他请求。此时，Redis 就无法快速访问数据了。&lt;/p>
+&lt;p>解决这个问题，采用&lt;strong>渐进式 rehash&lt;/strong>。&lt;/p>
+&lt;p>在第二步拷贝数据时，Redis 正常处理客户端请求。每处理一个请求，就从哈希表 1 的第一个索引位置开始，顺带把此索引位置的所有 entries 拷贝到哈希表 2 。处理下一个请求时，再顺带拷贝哈希表 1 下一个索引位置的 entries。&lt;/p>
+&lt;p>&lt;strong>渐进式 rehash&lt;/strong>巧妙地把一次性大量拷贝的开销，分摊到了多次处理请求的过程中，避免了耗时操作，保证了数据的快速访问。&lt;/p>
+&lt;p>&lt;img src="https://www.yangdiy.cn/assets/%e6%b8%90%e8%bf%9b%e5%bc%8frehash.webp"
+loading="lazy"
+alt="渐进式rehash"
+>&lt;/p>
+&lt;blockquote>
+&lt;p>如果有新的请求进来，在rehash过程中：&lt;/p>
+&lt;p>对于查询、删除、更新等操作，Redis 会先在当前正在使用的哈希表（一般称为旧表）中进行查找。如果没有找到，再到正在 rehash 的新哈希表中查找。&lt;/p>
+&lt;p>对于插入操作，如果当前正在 rehash，新元素可能会被插入到新哈希表中，以加快 rehash 的完成。&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="5-整数数组和压缩列表在查找时间复杂度方面并没有很大的优势那为什么-redis-还会把它们作为底层数据结构呢">5. 整数数组和压缩列表在查找时间复杂度方面并没有很大的优势，那为什么 Redis 还会把它们作为底层数据结构呢？
+&lt;/h3>&lt;ul>
+&lt;li>整数数组和压缩列表在存储相对紧凑的数据时，能够更有效地利用内存空间。相比于一些更复杂的数据结构，它们减少了内存开销和内存碎片的产生。&lt;/li>
+&lt;li>在数据量较小且操作相对简单的场景下，整数数组和压缩列表的实现较为简单，操作的性能开销相对较低，可以更好地利用 CPU 的缓存机制，提高数据访问的效率。&lt;/li>
+&lt;li>即使当进行随机访问时，虽然不是顺序访问，但由于数组元素的内存地址相邻，第一次访问某个元素可能未命中高速缓存，但相邻元素被加载进高速缓存的概率较大。&lt;/li>
+&lt;/ul>
+&lt;h2 id="线程模型">线程模型
+&lt;/h2>&lt;h3 id="1-redis-为什么是单线程的">1. redis 为什么是单线程的？
+&lt;/h3>&lt;p>增加线程数，系统吞吐率会增加，但是，再进一步增加线程时，系统吞吐率就增长迟缓了，有时甚至还会出现下降的情况。&lt;/p>
+&lt;h3 id="2-单线程的redis-为什么这么快呢">2. 单线程的redis 为什么这么快呢？
+&lt;/h3>&lt;ul>
+&lt;li>
+&lt;p>Redis 的大部分操作在内存上完成，再加上它采用了高效的数据结构。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>采用单线程模型可以&lt;strong>避免了多线程之间的竞争&lt;/strong>，省去了多线程切换带来的时间和性能上的开销，而且也不会导致死锁问题。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Redis 采用了&lt;strong>多路复用机制&lt;/strong>，使其在网络 IO 操作中能并发处理大量的客户端请求，实现高吞吐率。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h3 id="3-基本io模型会存在什么问题">3. 基本IO模型会存在什么问题？
+&lt;/h3>&lt;p>存在阻塞问题：&lt;/p>
+&lt;p>以一个Get请求为例，需要监听客户端请求（bind/listen），和客户端建立连接（accept），从 socket 中读取请求（recv），解析客户端发送请求（parse），根据请求类型读取键值数据（get），最后给客户端返回结果（send）。&lt;/p>
+&lt;p>这个六个过程有潜在的阻塞点，分别是 accept() 和 recv()。&lt;/p>
+&lt;p>当 Redis 监听到一个客户端有连接请求，但一直未能成功建立起连接时，会阻塞在 accept() 函数这里，导致其他客户端无法和 Redis 建立连接。当 Redis 通过 recv() 从一个客户端读取数据时，如果数据一直没有到达，Redis 也会一直阻塞在 recv()。&lt;/p>
+&lt;p>存在大量线程创建导致资源浪费：&lt;/p>
+&lt;p>每个用户请求到来都得占用一个进程来处理，来一个请求就要分配一个进程跟进处理，显然在高并发的情况下会导致资源的浪费&lt;/p>
+&lt;h3 id="4-什么是多路复用">4. 什么是多路复用
+&lt;/h3>&lt;p>在 Redis 只运行单线程的情况下，&lt;strong>该机制允许内核中，同时存在多个监听套接字和已连接套接字&lt;/strong>。内核会一直监听这些套接字上的连接请求或数据请求。一旦有请求到达，就会交给 Redis 线程处理。&lt;/p>
+&lt;p>当被监听的套接字准备执行连接应答（accept）、读取（read）、写入（write）、关 闭（close）等操作时，与操作相对应的文件事件就会产生，这些事件会被放进一个事件队列，不同事件会调用相应的处理函数，这就实现了基于事件的回调。&lt;/p>
+&lt;img src="./assets/redis单线程模型.drawio.png" alt="img" style="zoom: 33%;" />
+&lt;h3 id="5-在redis-io-模型还有哪些潜在的性能瓶颈吗">5. 在Redis IO 模型，还有哪些潜在的性能瓶颈吗？
+&lt;/h3>&lt;ol>
+&lt;li>任意一个请求在server中一旦发生耗时，都会影响整个server的性能，也就是说后面的请求都要等前面这个耗时请求处理完成，自己才能被处理到。耗时的操作包括以下几种：
+&lt;ol>
+&lt;li>操作bigkey：写入一个bigkey在分配内存时需要消耗更多的时间，同样，删除bigkey释放内存同样会产生耗时；&lt;/li>
+&lt;li>使用复杂度过高的命令：例如SORT/SUNION/ZUNIONSTORE，或者O(N)命令，但是N很大，例如lrange key 0 -1一次查询全量数据；&lt;/li>
+&lt;li>大量key集中过期：Redis的过期机制也是在主线程中执行的，大量key集中过期会导致处理一个请求时，耗时都在删除过期key，耗时变长；&lt;/li>
+&lt;li>淘汰策略：淘汰策略也是在主线程执行的，当内存超过Redis内存上限后，每次写入都需要淘汰一些key，也会造成耗时变长；&lt;/li>
+&lt;li>AOF刷盘开启always机制：每次写入都需要把这个操作刷到磁盘，写磁盘的速度远比写内存慢，会拖慢Redis的性能；&lt;/li>
+&lt;li>主从全量同步生成RDB：虽然采用fork子进程生成数据快照，但fork这一瞬间也是会阻塞整个线程的，实例越大，阻塞时间越久；&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;li>并发量非常大时，单线程读写客户端IO数据存在性能瓶颈，虽然采用IO多路复用机制，但是读写客户端数据依旧是同步IO，只能单线程依次读取客户端的数据，无法利用到CPU多核。&lt;/li>
+&lt;/ol>
+&lt;p>针对问题1，一方面需要业务人员去规避，一方面Redis在4.0推出了lazy-free机制，把bigkey释放内存的耗时操作放在了异步线程中执行，降低对主线程的影响。&lt;/p>
+&lt;p>针对问题2，Redis在6.0推出了多线程，可以在高并发场景下利用CPU多核多线程读写客户端数据，进一步提升server性能，当然，只是针对客户端的读写是并行的，每个命令的真正操作依旧是单线程的。&lt;/p>
+&lt;h2 id="存储">存储
+&lt;/h2>&lt;h3 id="1-redis是如何实现持久化">1. Redis是如何实现持久化？
+&lt;/h3>&lt;p>Redis 共有三种数据持久化的方式：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>AOF 日志&lt;/strong>：每执行一条写操作命令，就把该命令以追加的方式写入到一个文件里；&lt;/li>
+&lt;li>&lt;strong>RDB 快照&lt;/strong>：将某一时刻的内存数据，以二进制的方式写入磁盘；&lt;/li>
+&lt;li>&lt;strong>混合持久化方式&lt;/strong>：Redis 4.0 新增的方式，集成了 AOF 和 RBD 的优点；&lt;/li>
+&lt;/ul>
+&lt;h3 id="2-aof有什么优点以及有什么风险">2. AOF有什么优点以及有什么风险
+&lt;/h3>&lt;ul>
+&lt;li>&lt;strong>避免额外的检查开销&lt;/strong>：因为如果先将写操作命令记录到 AOF 日志里，再执行该命令的话，如果当前的命令语法有问题，那么如果不进行命令语法检查，该错误的命令记录到 AOF 日志里后，Redis 在使用日志恢复数据时，就可能会出错。&lt;/li>
+&lt;li>&lt;strong>不会阻塞当前写操作命令的执行&lt;/strong>：因为当写操作命令执行成功后，才会将命令记录到 AOF 日志。&lt;/li>
+&lt;/ul>
+&lt;p>当然，这样做也会带来风险：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>数据可能会丢失：&lt;/strong> 执行写操作命令和记录日志是两个过程，那当 Redis 在还没来得及将命令写入到硬盘时，服务器发生宕机了，这个数据就会有丢失的风险。&lt;/li>
+&lt;li>&lt;strong>可能阻塞其他操作：&lt;/strong> 由于写操作命令执行成功后才记录到 AOF 日志，所以不会阻塞当前命令的执行，但因为 AOF 日志也是在主线程中执行，所以当 Redis 把日志文件写入磁盘的时候，还是会阻塞后续的操作无法执行。&lt;/li>
+&lt;/ul>
+&lt;h3 id="3-aof-写回策略">3. AOF 写回策略
+&lt;/h3>&lt;p>AOF 风险与AOF回写磁盘是有关的，控制一个写命令执行完后 AOF 日志写回磁盘的时机，风险就会解除。&lt;/p>
+&lt;p>三种策略：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>Always&lt;/strong>，同步写回：每个写命令执行完，立马同步地将日志写回磁盘；&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Everysec&lt;/strong>，每秒写回：每个写命令执行完，只是先把日志写到 AOF 文件的内存缓冲区，每隔一秒把缓冲区中的内容写入磁盘；&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>No&lt;/strong>，操作系统控制的写回：每个写命令执行完，只是先把日志写到 AOF 文件的内存缓冲区，由操作系统决定何时将缓冲区内容写回磁盘。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>&lt;img src="https://www.yangdiy.cn/assets/98987d9417b2bab43087f45fc959d32a-20230309232253633.png"
+loading="lazy"
+alt="img"
+>&lt;/p>
+&lt;p>总结：想要获得高性能，就选择 No 策略；如果想要得到高可靠性保证，就选择 Always 策略；如果允许数据有一点丢失，又希望性能别受太大影响的话，那么就选择 Everysec 策略。&lt;/p>
+&lt;h3 id="4-日志文件太大怎么办">4. 日志文件太大怎么办？
+&lt;/h3>&lt;p>AOF 文件过大带来的性能问题，主要在于以下三个方面：&lt;/p>
+&lt;ul>
+&lt;li>文件系统本身对文件大小有限制，无法保存过大的文件；&lt;/li>
+&lt;li>如果文件太大，之后再往里面追加命令记录的话，效率也会变低；&lt;/li>
+&lt;li>如果发生宕机，AOF 中记录的命令要一个个被重新执行，用于故障恢复，如果日志文件太大，整个恢复过程就会非常缓慢，这就会影响到 Redis 的正常使用。&lt;/li>
+&lt;/ul>
+&lt;p>Redis 为了避免 AOF 文件越写越大，提供了 &lt;strong>AOF 重写机制&lt;/strong>，当 AOF 文件的大小超过所设定的阈值后，Redis 就会启用 AOF 重写机制，来压缩 AOF 文件。&lt;/p>
+&lt;p>重写的流程：根据这个键值对当前的最新状态，为它生成对应的写入命令。相当于旧日志文件中的多条命令，在重写后的新日志中变成了一条命令。&lt;/p>
+&lt;p>你也可以理解成&lt;strong>redis最新状态的保存&lt;/strong>&lt;/p>
+&lt;p>&lt;img src="https://www.yangdiy.cn/assets/redis%e9%87%8d%e5%86%99%e6%9c%ba%e5%88%b6.webp"
+loading="lazy"
+alt="redis重写机制"
+>&lt;/p>
+&lt;h3 id="5-aof重写会阻塞吗">5. AOF重写会阻塞吗？
+&lt;/h3>&lt;p>&lt;strong>一个拷贝，两处日志&lt;/strong>&lt;/p>
+&lt;p>AOF重写会通过 &lt;code>fork&lt;/code> 创建一个子进程 &lt;code>bgrewriteaof&lt;/code>，由子进程完成重写工作，不阻塞主线程处理请求，保障了服务的高可用性。&lt;/p>
+&lt;ol>
+&lt;li>主线程 fork 出一个子进程进行 AOF 重写操作，子进程独立完成新 AOF 文件的生成，避免主线程阻塞。&lt;/li>
+&lt;li>子进程基于拷贝的数据，逐步将操作记录写入新的 AOF 文件。&lt;/li>
+&lt;li>主线程不会因为 AOF 重写而阻塞，能够继续处理读写请求。
+&lt;ul>
+&lt;li>新的写操作会先写入现有的 AOF 文件，以确保数据持久性。&lt;/li>
+&lt;li>同时，这些写操作也会被记录到子进程的重写缓冲区中，以保证新的 AOF 文件包含最新的操作。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>重写完成后，新的 AOF 文件替代旧文件。&lt;/li>
+&lt;/ol>
+&lt;h3 id="6-aof-日志重写的时候是由-bgrewriteaof-子进程来完成的不用主线程参与这个重写过程有没有其他潜在的阻塞风险呢如果有的话会在哪里阻塞">6. AOF 日志重写的时候，是由 bgrewriteaof 子进程来完成的，不用主线程参与，这个重写过程有没有其他潜在的阻塞风险呢？如果有的话，会在哪里阻塞？
+&lt;/h3>&lt;h3 id="7-aof-重写也有一个重写日志为什么它不共享使用-aof-本身的日志呢">7. AOF 重写也有一个重写日志，为什么它不共享使用 AOF 本身的日志呢？
+&lt;/h3>&lt;ul>
+&lt;li>竞争问题&lt;/li>
+&lt;li>保证一致性和安全性&lt;/li>
+&lt;/ul>
+&lt;h3 id="8-对哪些数据做内存快照">8. 对哪些数据做内存快照？
+&lt;/h3>&lt;h3 id="9-做快照时数据还能被增删改吗是否会发生阻塞">9. 做快照时，数据还能被增删改吗，是否会发生阻塞？
+&lt;/h3>&lt;h3 id="10-执行快照的间隔时间">10. 执行快照的间隔时间
+&lt;/h3></description></item></channel></rss>
